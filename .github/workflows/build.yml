@@ -1,11 +1,39 @@
-on: push
-jobs: 
-  build-node:
+name: ci
+
+on:
+  pull_request:
+    branches:
+    - main
+  push:
+    branches:
+    - main
+
+jobs:
+  test:
     runs-on: ubuntu-latest
-    container: node:10
+    strategy:
+      matrix:
+        node-version:
+        - "10"
+
     steps:
-      - run: node --version
-      - run: npm --version
-      - uses: actions/checkout@v3
-      - run: npm install
-      - run: node index.js
+    - uses: actions/checkout@v2
+
+    - name: Install Node.js ${{ matrix.node-version }}
+      shell: bash -l {0}
+      run: |
+        nvm install --default ${{ matrix.node-version }}
+        dirname "$(npm which)" >> "$GITHUB_PATH"
+    - name: Install Node.js dependencies
+      run: npm install
+
+    - name: List environment
+      id: list_env
+      shell: bash
+      run: |
+        echo "node@$(node -v)"
+        echo "npm@$(npm -v)"
+        npm -s ls
+    - name: Run tests
+      shell: bash
+      run: npm test
